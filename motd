@@ -1,0 +1,27 @@
+                                                         root/var/run/motd
+
+
+
+     @@@     @@@@@@@      @@@@@@@  @@@    @@@    @@@     @@@@@@@   @@@@@@@
+     @@@@    @@    @@@   @@        @@@    @@@    @@@@    @@    @@@ @@    @@@
+    @@  @@   @@     @@@ @@   @@@@@ @@@    @@@   @@  @@   @@    @@@ @@     @@@
+   @@@@@@@@  @@     @@@ @@@  @@@@@ @@@    @@@  @@@@@@@@  @@@@@@@   @@     @@@
+  @@@@@@@@@@ @@    @@@   @@@    @@  @@@  @@@  @@@@@@@@@@ @@   @@   @@    @@@
+ @@@      @@ @@@@@@@      @@@@@@@    @@@@@@  @@@      @@ @@    @@@ @@@@@@@
+
+                                    HOME DNS
+UPDATE AdGuardHome
+      cd / $$ fetch https://github.com/AdguardTeam/AdGuardHome/releases/download/v0.107.44/AdGuardHome_freebsd_amd64.tar.gz
+      tar -xvf AdGuardHome_freebsd_amd64.tar.gz --strip-components 1
+      service adguard restart
+      service adguard status
+
+old SHELL SCRIPT
+      cd / $$ service adguard status
+      sudo sh update.sh v0.107.56 <- here new version in format vX.XXX.XX
+
+NEW SHELL SCRIPT
+      ./AGH_updater.sh check -> to check version
+or
+      ./AGH_updater.sh update -> to update AdGuardHome
+
