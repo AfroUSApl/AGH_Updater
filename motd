@@ -24,4 +24,3 @@ NEW SHELL SCRIPT
       ./AGH_updater.sh check -> to check version
 or
       ./AGH_updater.sh update -> to update AdGuardHome
-
