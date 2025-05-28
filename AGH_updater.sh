@@ -112,8 +112,10 @@ update_adguard() {
     tar -xzf AdGuardHome.tar.gz -C "$AGH_ROOT" --strip-components 1 || exerr "ERROR: Failed to extract files!"
     echo
 
+    echo "Stopping AdGuardHome service..."
+    service adguard stop || exerr "ERROR: Failed to stop AdGuardHome!"
     echo "Restarting AdGuardHome service..."
-    service adguard restart || exerr "ERROR: Failed to restart AdGuardHome!"
+    service adguard start || exerr "ERROR: Failed to start AdGuardHome!"
     echo
 
     currentdate=$(date +"%Y-%m-%d %H:%M:%S")
