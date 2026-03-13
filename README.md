@@ -43,10 +43,8 @@ The script can also be called from a cronjob to check for updates on a regular s
 
 ## Troubleshooting
 
-I did test the script on my TrueNAS 13-U7 and Nextcloud 30.0.6.
-
+I did test the script on my TrueNAS 13-U7 and AdguardHome v0.107.71
 If you happen to find any errors, please open issu ticket
-
 I did install additional packages to my iocage:
 
 ```bash
