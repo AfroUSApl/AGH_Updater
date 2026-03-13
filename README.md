@@ -43,7 +43,7 @@ The script can also be called from a cronjob to check for updates on a regular s
 
 ## Troubleshooting
 
-I did test the script on my TrueNAS 13-U7 and AdguardHome v0.107.71
+I did test the script on my TrueNAS 13-U7 and AdguardHome v0.107.73
 
 If you happen to find any errors, please open issu ticket
 
