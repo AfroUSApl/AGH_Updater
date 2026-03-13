@@ -17,7 +17,7 @@ START_FOLDER=$(dirname "$SCRIPT_PATH")
 section() {
     echo ""
     printf "${BLUE}${BOLD}======================================================================${RESET}\n"
-    printf "${BLUE}${BOLD} %-20s${RESET}%s\n" "" "${WHITE}${BOLD}$1"
+    printf "${BLUE}${BOLD} %-20s${RESET}${WHITE}${BOLD}%s\n" "" "$1"
     printf "${BLUE}${BOLD}======================================================================${RESET}\n"
 }
 
