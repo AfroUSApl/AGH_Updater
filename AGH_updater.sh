@@ -1,12 +1,41 @@
 #!/bin/sh
 
+VER="1.5"				# script version
+
+
 . /etc/rc.subr
 
-exerr () { echo -e "$*" >&2 ; exit 1; }
+# exerr () { echo -e "$*" >&2 ; exit 1; }
 
 # Get the full path of the script
 SCRIPT_PATH=$(realpath "$0")
 START_FOLDER=$(dirname "$SCRIPT_PATH")
+
+##############################################################################
+#                           COLOR DEFINITIONS
+##############################################################################
+section() {
+    echo ""
+    printf "${BLUE}${BOLD}======================================================================${RESET}\n"
+    printf "${BLUE}${BOLD} %-20s${RESET}%s\n" "" "$1"
+    printf "${BLUE}${BOLD}======================================================================${RESET}\n"
+}
+
+ok() {
+    printf "${GREEN}[✔ OK]${RESET} %s\n" "$1"
+}
+
+exerr() {
+    echo -e "${RED}[✘ ERROR]${RESET} %s\n" "$1"
+}
+
+info() {
+    printf "${CYAN}[🛈]${RESET} %s\n" "$1"
+}
+
+progress() {
+    printf "${YELLOW}→${RESET} %s\n" "$1"
+}
 
 # Define color variables
 RED="\033[31m"
@@ -29,20 +58,11 @@ check_dependencies() {
     fi
 }
 
-# Function to prompt for confirmation before updating
-confirm_action() {
-    echo
-    echo -e "${YELLOW}${BOLD}WARNING:${RESET}${YELLOW} This will update AdGuard Home to the latest version and overwrite existing files.${RESET}"
-    printf "${BOLD}Do you want to continue? (y/N): ${RESET}"
-    read -r answer
-    case "$answer" in
-        [Yy]*) echo -e "${GREEN}Proceeding with update...${RESET}" ;;
-        *) echo -e "${RED}Update cancelled by user.${RESET}"; exit 0 ;;
-    esac
-    echo
-}
-
-# Function to get the latest version from GitHub
+    echo ""
+section "AdGuardHome Updater ${VER}"
+    echo ""	
+	
+# "Function to get the latest version from GitHub"
 get_latest_version() {
     json_file="/tmp/agh_latest.json"
     fetch -q -o "$json_file" https://api.github.com/repos/AdguardTeam/AdGuardHome/releases/latest || exerr "ERROR: Failed to fetch latest release info."
@@ -57,8 +77,9 @@ get_latest_version() {
         exerr "ERROR: Failed to parse latest version from JSON!"
     fi
 }
+echo
 
-# Function to get the installed version
+# "Function to get the installed version..."
 get_installed_version() {
     if [ -f "/AdGuardHome/AdGuardHome" ]; then
         version_output=$(/AdGuardHome/AdGuardHome --version 2>/dev/null)
@@ -78,10 +99,25 @@ check_update() {
     echo -e "Latest available version:  ${YELLOW}${BOLD}$latest_version${RESET}"
 
     if [ "$installed_version" != "Not Installed" ] && [ "$installed_version" = "$latest_version" ]; then
-        echo -e "${BLUE}${BOLD}Your AdGuardHome is up to date!${RESET}"
+        echo -e "${GREEN}${BOLD}Your AdGuardHome is up to date!${RESET}"
+        ok "Done."
     else
         echo -e "${RED}${BOLD}A new version is available! Consider updating.${RESET}"
     fi
+}
+
+# Function to prompt for confirmation before updating
+confirm_action() {
+    check_update
+	echo -e "${YELLOW}${BOLD}WARNING: Y:${RESET}${YELLOW} will update AdGuard Home to the latest version \n            and overwrite existing files, settings are not overwritten. \n         ${BOLD}N:${RESET}${YELLOW} will stop current script and exit.${RESET}"
+    printf "${BOLD}Do you want to continue? (y/N): ${RESET}"
+    read -r answer
+    case "$answer" in
+        [Yy]*) echo -e "${GREEN}Proceeding with update...${RESET}" ;;
+        *) echo -e "${RED}Update cancelled by user.${RESET}"; exit 0 ;;
+    esac
+    
+    echo
 }
 
 # Function to update AdGuardHome
@@ -89,10 +125,12 @@ update_adguard() {
     # Confirm before proceeding
     confirm_action
 
+section "Backup"
     echo -e "${RED}Creating backup of AdGuard Home config...${RESET}"
     cd /AdGuardHome || exerr "ERROR: /AdGuardHome does not exist!"
     tar -czf AdGuardHome_backup.tar.gz AdGuardHome || exerr "ERROR: Backup failed!"
-    echo -e "${GREEN}Backup created at /AdGuardHome/AdGuardHome_backup.tar.gz${RESET}"
+    echo -e "${CYAN}Backup created at /AdGuardHome/AdGuardHome_backup.tar.gz${RESET}"
+    ok "Done."
     echo
 
     # Get latest version info
@@ -104,26 +142,59 @@ update_adguard() {
     mkdir -p "$START_FOLDER/temporary" || exerr "ERROR: Could not create temp directory!"
     cd "$START_FOLDER/temporary" || exerr "ERROR: Could not access temp directory!"
 
+section "Retreving"
     echo -e "Retrieving AdGuardHome version ${BOLD}${latest_version}${RESET}..."
     fetch -o AdGuardHome.tar.gz "$DOWNLOAD_URL" || exerr "ERROR: Failed to download AdGuardHome!"
+    ok "Done."
     echo
 
+section "Restartin AdGuardHome Service"
+    echo "Stopping AdGuardHome service..."
+    service adguard stop 2>/dev/null
+    pkill -TERM AdGuardHome 2>/dev/null
+    sleep 3
+    ok "Done."
+    echo
+
+    echo "Force kill any remaining instances..."
+    pgrep AdGuardHome >/dev/null && pkill -9 AdGuardHome
+    sleep 3
+    ok "Done."
+    echo	
+	
+section "Unpacking"
     echo -e "Unpacking to ${BOLD}/AdGuardHome${RESET}..."
     tar -xzf AdGuardHome.tar.gz -C "$AGH_ROOT" --strip-components 1 || exerr "ERROR: Failed to extract files!"
+    ok "Done."
     echo
-
-    echo "Stopping AdGuardHome service..."
-    service adguard stop || exerr "ERROR: Failed to stop AdGuardHome!"
-    echo "Restarting AdGuardHome service..."
+section "Restarting Service"
+    echo "Starting AdGuardHome..."
     service adguard start || exerr "ERROR: Failed to start AdGuardHome!"
-    echo
+    sleep 5
+    ok "Done."
 
+ #   echo "Stopping AdGuardHome service..."
+ #   service adguard stop
+ #   sleep 5
+ #   echo "Restarting AdGuardHome service..."
+ #   service adguard start
+ #   echo
+
+    echo "AdGuardHome Status"
+    service adguard status
+    echo ""
+
+section "Update Completed"
     currentdate=$(date +"%Y-%m-%d %H:%M:%S")
     echo -e "${GREEN}AdGuardHome updated successfully to version ${BOLD}${latest_version}${RESET}"
     echo -e "${BLUE}Update completed on: ${BOLD}${currentdate}${RESET}"
-
+    echo
+	echo Checking how many instances of AdGuardHome are running:
+	pgrep AdGuardHom
+	echo
     echo "Cleaning up temporary files..."
     rm -rf "$START_FOLDER/temporary" || exerr "ERROR: Failed to remove temporary folder!"
+    ok "Done."
     echo
 }
 
@@ -132,7 +203,7 @@ check_dependencies
 
 # Main logic
 if [ -z "$1" ]; then
-    exerr "ERROR: You must provide an argument: 'check' or 'update'."
+    exerr "->       You must provide an argument to run this script."
 fi
 
 case "$1" in
@@ -143,6 +214,7 @@ case "$1" in
         update_adguard
         ;;
     *)
-        exerr "ERROR: Invalid argument. Use 'check' to check for updates or 'update' to update AdGuardHome."
+        exerr "->       Use '${BOLD}./AGH_updater.sh check${RESET}' to check for updates,\n           or '${BOLD}./AGH_updater.sh update${RESET}' to update AdGuardHome."
         ;;
 esac
+
